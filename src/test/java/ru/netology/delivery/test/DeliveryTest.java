@@ -1,8 +1,9 @@
 package ru.netology.delivery.test;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.logevents.SelenideLogger;
+import io.qameta.allure.selenide.AllureSelenide;
+import org.junit.jupiter.api.*;
 import org.openqa.selenium.Keys;
 import ru.netology.delivery.data.DataGenerator;
 
@@ -19,6 +20,16 @@ class DeliveryTest {
         open("http://localhost:9999");
     }
 
+    @BeforeAll
+    static void setUpAll() {
+        SelenideLogger.addListener("allure", new AllureSelenide());
+    }
+
+    @AfterAll
+    static void tearDownAll() {
+        SelenideLogger.removeListener("allure");
+    }
+
     @Test
     @DisplayName("Should successful plan and replan meeting")
     void shouldSuccessfulPlanAndReplanMeeting() {
@@ -27,7 +38,6 @@ class DeliveryTest {
         var firstMeetingDate = DataGenerator.generateDate(daysToAddForFirstMeeting);
         var daysToAddForSecondMeeting = 7;
         var secondMeetingDate = DataGenerator.generateDate(daysToAddForSecondMeeting);
-        // TODO: добавить логику теста в рамках которого будет выполнено планирование и перепланирование встречи.
         $("[data-test-id=city] .input__control").setValue(validUser.getCity());
         $("[data-test-id=date] .input__control").sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.BACK_SPACE);
         $("[data-test-id=date] .input__control").setValue(firstMeetingDate);
@@ -36,7 +46,9 @@ class DeliveryTest {
         $("[data-test-id=agreement] .checkbox__box").click();
         $$(".button").find(exactText("Запланировать")).click();
         $(withText("Успешно")).shouldBe(visible, Duration.ofSeconds(15));
-        $(withText("Встреча успешно запланирована на")).shouldBe(visible, Duration.ofSeconds(15));
+        $("[data-test-id='success-notification'] .notification__content")
+                .shouldHave(Condition.text("Встреча успешно запланирована на " + firstMeetingDate), Duration.ofSeconds(15))
+                .shouldBe(Condition.visible);
         $(withText(firstMeetingDate)).shouldBe(visible, Duration.ofSeconds(15));
         $("[data-test-id=success-notification] .icon-button__text").click();
         $("[data-test-id=date] .input__control").sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.BACK_SPACE);
@@ -45,7 +57,9 @@ class DeliveryTest {
         $(withText("Необходимо подтверждение")).shouldBe(visible, Duration.ofSeconds(15));
         $("[data-test-id=replan-notification] .button__content").click();
         $(withText("Успешно")).shouldBe(visible, Duration.ofSeconds(15));
-        $(withText("Встреча успешно запланирована на")).shouldBe(visible, Duration.ofSeconds(15));
-        $(withText(secondMeetingDate)).shouldBe(visible, Duration.ofSeconds(15));
+        $("[data-test-id='success-notification'] .notification__content")
+                .shouldHave(Condition.text("Встреча успешно запланирована на " + secondMeetingDate), Duration.ofSeconds(15))
+                .shouldBe(Condition.visible);
+
     }
 }
